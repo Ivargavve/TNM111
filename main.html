@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scatter Plot</title>
+  <style>
+    #scatterPlot {
+      position: relative;
+      border: 1px solid #000;
+      width: 800px;
+      height: 800px;
+    }
+    .point {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="scatterPlot"></div>
+
+<script>
+  // Sample data
+  const data = [
+    { x: -12, y: 20, type: 'a' },
+    { x: -23, y: 23, type: 'a' },
+    // Add more data points as needed
+  ];
+
+  const colors = {
+    'a': 'red',
+    'b': 'green',
+    'c': 'blue'
+  };
+
+  function drawScatterPlot() {
+    const scatterPlot = document.getElementById('scatterPlot');
+
+    // Draw x and y axes
+    const xAxis = document.createElement('div');
+    xAxis.style.position = 'absolute';
+    xAxis.style.width = '100%';
+    xAxis.style.height = '2px';
+    xAxis.style.background = '#000';
+    xAxis.style.left = '0';
+    xAxis.style.top = '50%';
+    scatterPlot.appendChild(xAxis);
+
+    const yAxis = document.createElement('div');
+    yAxis.style.position = 'absolute';
+    yAxis.style.width = '2px';
+    yAxis.style.height = '100%';
+    yAxis.style.background = '#000';
+    yAxis.style.left = '50%';
+    yAxis.style.top = '0';
+    scatterPlot.appendChild(yAxis);
+
+    // Draw ticks
+    drawTicks(scatterPlot, -10, 10, true);
+    drawTicks(scatterPlot, -10, 10, false);
+
+    // Draw points
+    data.forEach(point => {
+      const pointElement = document.createElement('div');
+      pointElement.className = 'point';
+      pointElement.style.background = colors[point.type];
+      pointElement.style.left = `${convertToPixel(point.x, 'x')}px`;
+      pointElement.style.top = `${convertToPixel(point.y, 'y')}px`;
+
+      pointElement.addEventListener('click', () => handlePointClick(point, pointElement));
+      scatterPlot.appendChild(pointElement);
+    });
+  }
+
+  function drawTicks(container, min, max, isXAxis) {
+    for (let i = min; i <= max; i++) {
+      const tick = document.createElement('div');
+      tick.style.position = 'absolute';
+      tick.style.background = '#000';
+      tick.style.width = isXAxis ? '1px' : '100%';
+      tick.style.height = isXAxis ? '10px' : '1px';
+      tick.style.left = isXAxis ? `${convertToPixel(i, 'x')}px` : '50%';
+      tick.style.top = isXAxis ? '50%' : `${convertToPixel(i, 'y')}px`;
+      container.appendChild(tick);
+    }
+  }
+
+  function convertToPixel(value, axis) {
+    const range = axis === 'x' ? 20 : 10;
+    return 400 + (value * (350 / range));
+  }
+
+  function handlePointClick(point, element) {
+    // Implement the desired behavior on point click
+    alert(`Clicked on point (${point.x}, ${point.y}) of type ${point.type}`);
+  }
+
+  // Initial draw
+  drawScatterPlot();
+</script>
+
+</body>
+</html>
