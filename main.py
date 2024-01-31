@@ -15,7 +15,7 @@ class Point:
 
     def __str__(self):
         return f'{self.x}i{self.y:+}j'
-s
+
 # Define a class representing a scatter plot
 class ScatterPlot:
     
@@ -36,8 +36,8 @@ class ScatterPlot:
         i = 0
         for point in self.data:
             i += 1
-            point.x = 400 + point.x * (350/100)
-            point.y = 400 - point.y * (350/100)
+            point.x = 400 + point.x * (350/x_range)
+            point.y = 400 - point.y * (350/y_range)
             # point.y = round(400 - i*(350/x_range))  
             index = types.index(point.type)
             if index == 0:    
@@ -67,7 +67,6 @@ class ScatterPlot:
         self.canvas.create_line(400, 750, 400, 50, fill="black", width=5)
         self.canvas.create_text(700, 700, text="X-axis")
         self.canvas.create_text(25, 25, text="Y-axis")
-
 
         # Get min and max values
         xMin = min(self.data,key=lambda point:point.x)
