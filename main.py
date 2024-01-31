@@ -53,9 +53,6 @@ class ScatterPlot:
 
     # Create the scatter plot
     def scatter_plot(self):
-
-
-
         window = tk.Tk()
         window.title("Scatter Plot")
         self.canvas = tk.Canvas(window, width=800, height=800)
@@ -144,7 +141,7 @@ class ScatterPlot:
                 #         index += s
                 
                 p = self.canvas.coords(points[i])
-             
+
                 # Change color
                 if p[0] > 400 and p[1] > 400:
                     self.canvas.itemconfig(points[i], fill="red")
