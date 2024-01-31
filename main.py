@@ -36,8 +36,8 @@ class ScatterPlot:
         i = 0
         for point in self.data:
             i += 1
-            point.x = 400 + point.x * (350/x_range)
-            point.y = 400 - point.y * (350/y_range)
+            point.x = 400 + point.x * (350/100)
+            point.y = 400 - point.y * (350/100)
             # point.y = round(400 - i*(350/x_range))  
             index = types.index(point.type)
             if index == 0:    

@@ -14,8 +14,8 @@ def load_csv(file):
         for line in file:
             values = line.strip().split(",")
             data.append(Point(
-                float(values[0]) + 350,
-                float(values[1]) + 350,
+                float(values[0]),
+                float(values[1]),
                 values[2]
             ))
     return data
@@ -51,10 +51,12 @@ def drawRect(x,y,):
     canvas.create_rectangle(x,y,x+5,y+5,fill="blue")
 
 def drawCross(x,y):
-    canvas.create_line(x,y,x+5,y+5,fill="green")
+    canvas.create_line(x,y,x+5,y+5,fill="yellow")
 
 def scatterplot(data):
     for point in data:
+        point.x = 350 + point.x * (350/100)
+        point.y = 350 - point.y * (350/100)
         if point.id == "a":
             drawDot(point.x, point.y)
         elif point.id == "b":
@@ -71,7 +73,6 @@ def create_canvas():
     return canvas
 
 data = load_csv("data1.csv")
-
 canvas = create_canvas()
 maxT = calculateMax(data)
 draw_graph(canvas, maxT)
