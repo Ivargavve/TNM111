@@ -1,0 +1,219 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import pandas as pd
+
+
+class EnhancedScatterPlotApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Enhanced Scatter Plot")
+        self.root.geometry("850x650")
+
+        self.data = None
+        self.scatter_plot_shapes = []
+        self.left_selected = None
+        self.right_selected = None
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.load_data_button = tk.Button(
+            self.root, text="Load Data", command=self.load_data
+        )
+        self.load_data_button.pack(pady=10)
+
+        self.plot_button = tk.Button(
+            self.root, text="Plot Scatter Plot", command=self.plot_scatter_plot
+        )
+        self.plot_button.pack(pady=10)
+
+        self.canvas = tk.Canvas(self.root, width=800, height=600, bg="white")
+        self.canvas.pack()
+
+        self.canvas.bind("<Button-1>", self.left_click)
+        self.canvas.bind("<Button-3>", self.right_click)
+
+    def load_data(self):
+        file_path = filedialog.askopenfilename(
+            title="Select CSV file", filetypes=[("CSV files", "*.csv")]
+        )
+
+        if file_path:
+            self.data = pd.read_csv(file_path)
+            messagebox.showinfo("Info", "Data loaded successfully!")
+
+    def plot_scatter_plot(self):
+        if self.data is None:
+            messagebox.showwarning("Warning", "Please load data first.")
+            return
+
+        self.canvas.delete("all")
+        self.scatter_plot_shapes = []
+        shape_dict = {
+            category: shape
+            for category, shape in zip(
+                self.data.iloc[:, 2].unique(),
+                ["circle", "triangle", "square"],
+            )
+        }
+
+        for _, row in self.data.iterrows():
+            x, y, category = row[0], row[1], row[2]
+            x_pixel = self.map_x_to_pixel(x, self.data.iloc[:, 0].min(), self.data.iloc[:, 0].max())
+            y_pixel = self.map_y_to_pixel(y, self.data.iloc[:, 1].min(), self.data.iloc[:, 1].max())
+            shape = shape_dict.get(category, "circle")
+            shape_id = self.plot_shape(x_pixel, y_pixel, shape, fill="blue")
+            self.scatter_plot_shapes.append((shape_id, (x, y, category)))
+
+        self.draw_axes()
+
+    def map_x_to_pixel(self, x, x_min, x_max):
+        return 70 + (x - x_min) * (800 - 2 * 70) / (x_max - x_min)
+
+    def map_y_to_pixel(self, y, y_min, y_max):
+        return 600 - 70 - (y - y_min) * (600 - 2 * 70) / (y_max - y_min)
+
+    def plot_shape(self, x, y, shape, **kwargs):
+        half_size = 3
+        if shape == "circle":
+            return self.canvas.create_oval(
+                x - half_size, y - half_size, x + half_size, y + half_size, **kwargs
+            )
+        elif shape == "triangle":
+            return self.create_triangle(x, y, half_size, **kwargs)
+        elif shape == "square":
+            return self.canvas.create_rectangle(
+                x - half_size, y - half_size, x + half_size, y + half_size, **kwargs
+            )
+
+    def create_triangle(self, x, y, size, **kwargs):
+        x0, y0 = x, y - size
+        x1, y1 = x - size, y + size
+        x2, y2 = x + size, y + size
+        return self.canvas.create_polygon(
+            x0, y0, x1, y1, x2, y2, outline="black", **kwargs
+        )
+
+    def draw_axes(self):
+        x_min = self.data.iloc[:, 0].min()
+        x_max = self.data.iloc[:, 0].max()
+        y_min = self.data.iloc[:, 1].min()
+        y_max = self.data.iloc[:, 1].max()
+
+        x_axis_y_pos = self.map_y_to_pixel(0, y_min, y_max)
+        y_axis_x_pos = self.map_x_to_pixel(0, x_min, x_max)
+
+        self.canvas.create_line(
+            70, x_axis_y_pos, 800 - 70, x_axis_y_pos, fill="black"
+        )  # x-axis
+        self.canvas.create_line(
+            y_axis_x_pos, 70, y_axis_x_pos, 600 - 70, fill="black"
+        )  # y-axis
+
+    def left_click(self, event):
+        x, y = event.x, event.y
+
+        for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
+            x_pixel = self.map_x_to_pixel(x_data, self.data.iloc[:, 0].min(), self.data.iloc[:, 0].max())
+            y_pixel = self.map_y_to_pixel(y_data, self.data.iloc[:, 1].min(), self.data.iloc[:, 1].max())
+
+            if (
+                x_pixel - 3 <= x <= x_pixel + 3
+                and y_pixel - 3 <= y <= y_pixel + 3
+            ):
+                if self.left_selected == shape_id:
+                    self.clear_quadrant_axes()
+                    self.left_selected = None
+                    self.reset_shape_colors()
+                else:
+                    self.left_selected = shape_id
+                    self.clear_quadrant_axes()
+                    self.draw_quadrant_axes(x_pixel, y_pixel)
+                    self.color_by_quadrant(x_pixel, y_pixel)
+                break
+
+    def right_click(self, event):
+        x, y = event.x, event.y
+
+        for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
+            x_pixel = self.map_x_to_pixel(x_data, self.data.iloc[:, 0].min(), self.data.iloc[:, 0].max())
+            y_pixel = self.map_y_to_pixel(y_data, self.data.iloc[:, 1].min(), self.data.iloc[:, 1].max())
+
+            if (
+                x_pixel - 3 <= x <= x_pixel + 3
+                and y_pixel - 3 <= y <= y_pixel + 3
+            ):
+                if self.right_selected == shape_id:
+                    self.unhighlight_points()
+                    self.right_selected = None
+                else:
+                    self.right_selected = shape_id
+                    neighbors = self.find_neighbors((x_data, y_data), num_neighbors=6)
+                    self.highlight_points(neighbors)
+                break
+
+    def clear_quadrant_axes(self):
+        self.canvas.delete("quad_axis")
+
+    def draw_quadrant_axes(self, x, y):
+        self.canvas.create_line(
+            70, y, 800 - 70, y, fill="gray", tags="quad_axis"
+        )  # horizontal axis
+        self.canvas.create_line(
+            x, 70, x, 600 - 70, fill="gray", tags="quad_axis"
+        )  # vertical axis
+
+    def color_by_quadrant(self, x, y):
+        colors = {1: "green", 2: "blue", 3: "red", 4: "yellow"}
+
+        for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
+            x_pixel = self.map_x_to_pixel(x_data, self.data.iloc[:, 0].min(), self.data.iloc[:, 0].max())
+            y_pixel = self.map_y_to_pixel(y_data, self.data.iloc[:, 1].min(), self.data.iloc[:, 1].max())
+
+            quadrant = self.get_quadrant((x_pixel, y_pixel), (x, y))
+            self.canvas.itemconfig(shape_id, fill=colors.get(quadrant, "black"))
+
+    def get_quadrant(self, pos, origin):
+        if pos[0] >= origin[0] and pos[1] >= origin[1]:
+            return 1
+        elif pos[0] < origin[0] and pos[1] >= origin[1]:
+            return 2
+        elif pos[0] < origin[0] and pos[1] < origin[1]:
+            return 3
+        elif pos[0] >= origin[0] and pos[1] < origin[1]:
+            return 4
+        return 0
+
+    def find_neighbors(self, center_point, num_neighbors=5):
+        distances = [
+            (
+                self.calculate_distance(center_point, (x_data, y_data)),
+                (x_data, y_data),
+            )
+            for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes
+        ]
+        distances.sort()  # Sort by distance
+        neighbors = [point[1] for point in distances[:num_neighbors]]
+        return neighbors
+
+    def calculate_distance(self, point1, point2):
+        return ((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2) ** 0.5
+
+    def highlight_points(self, points):
+        for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
+            if (x_data, y_data) in points:
+                self.canvas.itemconfig(shape_id, outline="green")
+
+    def unhighlight_points(self):
+        for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
+            self.canvas.itemconfig(shape_id, outline="black")
+
+    def reset_shape_colors(self):
+        for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
+            self.canvas.itemconfig(shape_id, fill="blue")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = EnhancedScatterPlotApp(root)
+    root.mainloop()
