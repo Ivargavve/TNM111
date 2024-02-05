@@ -7,7 +7,7 @@ class EnhancedScatterPlotApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Enhanced Scatter Plot")
-        self.root.geometry("850x650")
+        self.root.geometry("850x850")
 
         self.data = None
         self.scatter_plot_shapes = []
@@ -99,16 +99,51 @@ class EnhancedScatterPlotApp:
         x_max = self.data.iloc[:, 0].max()
         y_min = self.data.iloc[:, 1].min()
         y_max = self.data.iloc[:, 1].max()
-
+        
         x_axis_y_pos = self.map_y_to_pixel(0, y_min, y_max)
         y_axis_x_pos = self.map_x_to_pixel(0, x_min, x_max)
+        line_extensionX = 0
+        line_extensionY = 0
+        
+        if(y_axis_x_pos<70):
+            x_axis_y_pos = x_axis_y_pos -210
+            line_extensionX = 10
+            line_extensionY = 20
+        
+        line_thickness = 2
 
+        print(y_max)
         self.canvas.create_line(
-            70, x_axis_y_pos, 800 - 70, x_axis_y_pos, fill="black"
+            70-line_extensionX, x_axis_y_pos, 800 - 70, x_axis_y_pos, fill="black", width=line_thickness
         )  # x-axis
         self.canvas.create_line(
-            y_axis_x_pos, 70, y_axis_x_pos, 600 - 70, fill="black"
+            y_axis_x_pos, 70, y_axis_x_pos, 600 - 70+line_extensionY, fill="black", width=line_thickness
         )  # y-axis
+
+        y_tick_spacing = 10
+        y_range = range(int(y_min), int(y_max)+ 1, y_tick_spacing)
+
+        for y_tick_value in y_range:
+            y_tick_pixel = self.map_y_to_pixel(y_tick_value, y_min, y_max)
+            self.canvas.create_line(
+                y_axis_x_pos - 5, y_tick_pixel, y_axis_x_pos + 5, y_tick_pixel, fill="black"
+            )
+            self.canvas.create_text(
+                y_axis_x_pos - 20, y_tick_pixel, anchor=tk.E, text=str(y_tick_value)
+            )
+
+        # Draw ticks and labels on x-axis
+        x_tick_spacing = 10
+        x_range = range(int(x_min), int(x_max) + 1, x_tick_spacing)
+        
+        for x_tick_value in x_range:
+            x_tick_pixel = self.map_x_to_pixel(x_tick_value, x_min, x_max)
+            self.canvas.create_line(
+                x_tick_pixel, x_axis_y_pos - 5, x_tick_pixel, x_axis_y_pos + 5, fill="black"
+            )
+            self.canvas.create_text(
+                x_tick_pixel, x_axis_y_pos + 20, anchor=tk.N, text=str(x_tick_value)
+            )
 
     def left_click(self, event):
         x, y = event.x, event.y
@@ -202,7 +237,7 @@ class EnhancedScatterPlotApp:
     def highlight_points(self, points):
         for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
             if (x_data, y_data) in points:
-                self.canvas.itemconfig(shape_id, outline="green")
+                self.canvas.itemconfig(shape_id, outline="red")
 
     def unhighlight_points(self):
         for shape_id, (x_data, y_data, category) in self.scatter_plot_shapes:
